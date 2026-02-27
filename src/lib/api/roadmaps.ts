@@ -23,6 +23,18 @@ export async function fetchRoadmaps(): Promise<Roadmap[]> {
   return data ?? [];
 }
 
+export async function fetchRoadmap(id: string): Promise<Roadmap | null> {
+  const supabase = getSupabase();
+  const { data, error } = await supabase
+    .from("roadmaps")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+
+  throwIfError(error);
+  return data;
+}
+
 export async function createRoadmap(
   title: string,
   description?: string

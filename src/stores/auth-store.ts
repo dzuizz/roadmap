@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { createClient } from "@/lib/supabase/client";
-import type { User } from "@supabase/supabase-js";
+import type { User, AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 interface AuthState {
   user: User | null;
@@ -21,7 +21,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     } = await supabase.auth.getUser();
     set({ user, loading: false });
 
-    supabase.auth.onAuthStateChange((_event, session) => {
+    supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
       set({ user: session?.user ?? null });
     });
   },

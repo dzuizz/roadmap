@@ -26,6 +26,7 @@ export default function RoadmapEditorPage() {
   const selectedNodeId = useRoadmapStore((s) => s.selectedNodeId);
   const viewMode = useRoadmapStore((s) => s.viewMode);
   const setViewMode = useRoadmapStore((s) => s.setViewMode);
+  const nodes = useRoadmapStore((s) => s.nodes);
 
   const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,15 +49,14 @@ export default function RoadmapEditorPage() {
 
     async function load() {
       try {
-        const roadmaps = await roadmapsApi.fetchRoadmaps();
+        const found = await roadmapsApi.fetchRoadmap(roadmapId);
         if (cancelled) return;
-        const found = roadmaps.find((r) => r.id === roadmapId);
         if (!found) {
           router.push("/dashboard");
           return;
         }
         setRoadmap(found);
-        await useRoadmapStore.getState().loadNodes(roadmapId);
+        await useRoadmapStore.getState().loadNodes(roadmapId, found.root_node_id ?? undefined);
       } catch (error) {
         console.error("Failed to load roadmap:", error instanceof Error ? error.message : error);
         if (!cancelled) router.push("/dashboard");
@@ -104,7 +104,7 @@ export default function RoadmapEditorPage() {
           </Button>
           <Separator orientation="vertical" className="h-5 hidden sm:block" />
           <h1 className="text-sm font-medium truncate min-w-0">
-            {roadmap.title}
+            {(roadmap.root_node_id && nodes.get(roadmap.root_node_id)?.title) || roadmap.title}
           </h1>
         </div>
 
