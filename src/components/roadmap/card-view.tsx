@@ -6,9 +6,18 @@ import { ProgressBar } from "./progress-bar";
 import { cn } from "@/lib/utils";
 import type { Node } from "@/types/database";
 
-const CARD_WIDTH = 180;
-const CARD_GAP_X = 24;
-const CARD_GAP_Y = 60;
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 639px)");
+    setIsMobile(mq.matches);
+    const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mq.addEventListener("change", handler);
+    return () => mq.removeEventListener("change", handler);
+  }, []);
+  return isMobile;
+}
+
 const CARD_MIN_HEIGHT = 56;
 
 interface CardViewProps {
@@ -28,6 +37,11 @@ interface LayoutNode {
 export function CardView({ roadmapId, rootNodeId }: CardViewProps) {
   const { nodes, loading, focusedNodeId, selectedNodeId, selectNode, addNode, getChildren } =
     useRoadmapStore();
+
+  const isMobile = useIsMobile();
+  const CARD_WIDTH = isMobile ? 140 : 180;
+  const CARD_GAP_X = isMobile ? 16 : 24;
+  const CARD_GAP_Y = isMobile ? 48 : 60;
 
   const containerRef = useRef<HTMLDivElement>(null);
   const [layout, setLayout] = useState<LayoutNode | null>(null);
@@ -62,7 +76,7 @@ export function CardView({ roadmapId, rootNodeId }: CardViewProps) {
       // Position children side by side
       let currentX = 0;
       for (const child of childLayouts) {
-        const subtreeWidth = getSubtreeWidth(child);
+        const subtreeWidth = getSubtreeWidth(child, CARD_WIDTH, CARD_GAP_X);
         offsetSubtree(child, currentX, 0);
         currentX += subtreeWidth + CARD_GAP_X;
       }
@@ -79,7 +93,7 @@ export function CardView({ roadmapId, rootNodeId }: CardViewProps) {
         children: childLayouts,
       };
     },
-    [nodes, getChildren]
+    [nodes, getChildren, CARD_WIDTH, CARD_GAP_X, CARD_GAP_Y]
   );
 
   useEffect(() => {
@@ -244,7 +258,7 @@ function Cards({
 
         {/* Add child button - appears on hover below the card */}
         <button
-          className="absolute -bottom-4 left-1/2 -translate-x-1/2 flex h-5 w-5 items-center justify-center rounded-full border bg-background opacity-0 transition-opacity group-hover:opacity-100 hover:bg-accent"
+          className="absolute -bottom-4 left-1/2 -translate-x-1/2 flex h-6 w-6 sm:h-5 sm:w-5 items-center justify-center rounded-full border bg-background sm:opacity-0 transition-opacity sm:group-hover:opacity-100 hover:bg-accent"
           onClick={(e) => {
             e.stopPropagation();
             onAddChild(roadmapId, node.id);
@@ -275,14 +289,14 @@ function Cards({
 
 // Layout helpers
 
-function getSubtreeWidth(node: LayoutNode): number {
-  if (node.children.length === 0) return CARD_WIDTH;
+function getSubtreeWidth(node: LayoutNode, cardWidth: number, gapX: number): number {
+  if (node.children.length === 0) return cardWidth;
   let width = 0;
   for (let i = 0; i < node.children.length; i++) {
-    width += getSubtreeWidth(node.children[i]);
-    if (i < node.children.length - 1) width += CARD_GAP_X;
+    width += getSubtreeWidth(node.children[i], cardWidth, gapX);
+    if (i < node.children.length - 1) width += gapX;
   }
-  return Math.max(CARD_WIDTH, width);
+  return Math.max(cardWidth, width);
 }
 
 function offsetSubtree(node: LayoutNode, dx: number, dy: number) {

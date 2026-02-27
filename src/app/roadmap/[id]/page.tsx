@@ -78,14 +78,14 @@ export default function RoadmapEditorPage() {
   }
 
   return (
-    <div className="flex h-screen flex-col">
+    <div className="flex h-[100dvh] flex-col">
       {/* Header */}
-      <header className="flex h-12 shrink-0 items-center justify-between border-b px-4">
-        <div className="flex items-center gap-3">
+      <header className="flex h-12 shrink-0 items-center justify-between border-b px-2 sm:px-4">
+        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 w-7 p-0"
+            className="h-8 w-8 shrink-0 p-0"
             onClick={() => router.push("/dashboard")}
           >
             <svg
@@ -102,18 +102,18 @@ export default function RoadmapEditorPage() {
               />
             </svg>
           </Button>
-          <Separator orientation="vertical" className="h-5" />
-          <h1 className="text-sm font-medium truncate max-w-[300px]">
+          <Separator orientation="vertical" className="h-5 hidden sm:block" />
+          <h1 className="text-sm font-medium truncate min-w-0">
             {roadmap.title}
           </h1>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1 sm:gap-2 shrink-0">
           {/* View toggle */}
           <div className="flex h-8 items-center rounded-md border bg-muted p-0.5">
             <button
               className={cn(
-                "flex h-7 items-center gap-1 rounded-sm px-2.5 text-xs font-medium transition-colors",
+                "flex h-7 items-center gap-1 rounded-sm px-2 sm:px-2.5 text-xs font-medium transition-colors",
                 viewMode === "list"
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -123,11 +123,11 @@ export default function RoadmapEditorPage() {
               <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
               </svg>
-              List
+              <span className="hidden sm:inline">List</span>
             </button>
             <button
               className={cn(
-                "flex h-7 items-center gap-1 rounded-sm px-2.5 text-xs font-medium transition-colors",
+                "flex h-7 items-center gap-1 rounded-sm px-2 sm:px-2.5 text-xs font-medium transition-colors",
                 viewMode === "cards"
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
@@ -137,20 +137,20 @@ export default function RoadmapEditorPage() {
               <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 0 1 6 3.75h2.25A2.25 2.25 0 0 1 10.5 6v2.25a2.25 2.25 0 0 1-2.25 2.25H6a2.25 2.25 0 0 1-2.25-2.25V6ZM3.75 15.75A2.25 2.25 0 0 1 6 13.5h2.25a2.25 2.25 0 0 1 2.25 2.25V18a2.25 2.25 0 0 1-2.25 2.25H6A2.25 2.25 0 0 1 3.75 18v-2.25ZM13.5 6a2.25 2.25 0 0 1 2.25-2.25H18A2.25 2.25 0 0 1 20.25 6v2.25A2.25 2.25 0 0 1 18 10.5h-2.25a2.25 2.25 0 0 1-2.25-2.25V6ZM13.5 15.75a2.25 2.25 0 0 1 2.25-2.25H18a2.25 2.25 0 0 1 2.25 2.25V18A2.25 2.25 0 0 1 18 20.25h-2.25a2.25 2.25 0 0 1-2.25-2.25v-2.25Z" />
               </svg>
-              Cards
+              <span className="hidden sm:inline">Cards</span>
             </button>
           </div>
 
-          <Separator orientation="vertical" className="h-5" />
+          <Separator orientation="vertical" className="h-5 hidden sm:block" />
 
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 text-xs"
+            className="h-8 w-8 p-0 sm:w-auto sm:px-3 text-xs"
             onClick={() => setTrashOpen(true)}
           >
             <svg
-              className="mr-1 h-3.5 w-3.5"
+              className="h-3.5 w-3.5 sm:mr-1"
               fill="none"
               stroke="currentColor"
               strokeWidth={2}
@@ -162,13 +162,13 @@ export default function RoadmapEditorPage() {
                 d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
               />
             </svg>
-            Trash
+            <span className="hidden sm:inline">Trash</span>
           </Button>
 
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 w-8 p-0 text-xs"
+            className="h-8 w-8 p-0 text-xs hidden sm:flex"
             onClick={() => setShortcutsOpen(true)}
             title="Keyboard shortcuts (?)"
           >
@@ -183,9 +183,12 @@ export default function RoadmapEditorPage() {
       <Breadcrumbs rootNodeId={roadmap.root_node_id} />
 
       {/* Main content: view + detail panel */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden relative">
         {/* View panel */}
-        <div className="flex-1 overflow-hidden border-r">
+        <div className={cn(
+          "flex-1 overflow-hidden",
+          selectedNodeId && "hidden sm:block sm:border-r"
+        )}>
           {viewMode === "list" ? (
             <TreeView
               roadmapId={roadmapId}
@@ -199,9 +202,9 @@ export default function RoadmapEditorPage() {
           )}
         </div>
 
-        {/* Detail panel */}
+        {/* Detail panel — full-width on mobile, fixed sidebar on desktop */}
         {selectedNodeId && (
-          <div className="w-[340px] shrink-0 overflow-hidden">
+          <div className="w-full sm:w-[340px] shrink-0 overflow-hidden">
             <NodeDetail
               roadmapId={roadmapId}
               rootNodeId={roadmap.root_node_id}

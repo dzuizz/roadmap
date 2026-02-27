@@ -42,7 +42,7 @@ export function TrashPanel({ roadmapId, open, onOpenChange }: TrashPanelProps) {
         <SheetHeader>
           <SheetTitle>Trash</SheetTitle>
         </SheetHeader>
-        <ScrollArea className="mt-4 h-[calc(100vh-8rem)]">
+        <ScrollArea className="mt-4 h-[calc(100dvh-8rem)]">
           {trashEntries.length === 0 ? (
             <p className="py-8 text-center text-sm text-muted-foreground">
               Trash is empty

@@ -36,7 +36,7 @@ export function TreeNode({ node, depth, roadmapId, isRoot }: TreeNodeProps) {
             ? "bg-accent text-accent-foreground"
             : "hover:bg-accent/50"
         )}
-        style={{ paddingLeft: `${depth * 20 + 8}px` }}
+        style={{ paddingLeft: `${depth * 16 + 8}px` }}
         onClick={() => selectNode(node.id)}
       >
         {/* Top row: expand toggle, title, actions */}
@@ -44,7 +44,7 @@ export function TreeNode({ node, depth, roadmapId, isRoot }: TreeNodeProps) {
           {/* Expand/collapse toggle */}
           <button
             className={cn(
-              "flex h-5 w-5 shrink-0 items-center justify-center rounded transition-colors hover:bg-accent",
+              "flex h-7 w-7 sm:h-5 sm:w-5 shrink-0 items-center justify-center rounded transition-colors hover:bg-accent",
               !hasChildren && "invisible"
             )}
             onClick={(e) => {
@@ -77,7 +77,7 @@ export function TreeNode({ node, depth, roadmapId, isRoot }: TreeNodeProps) {
 
           {/* Add child button */}
           <button
-            className="flex h-5 w-5 shrink-0 items-center justify-center rounded opacity-0 transition-opacity group-hover:opacity-100 hover:bg-accent"
+            className="flex h-7 w-7 sm:h-5 sm:w-5 shrink-0 items-center justify-center rounded sm:opacity-0 transition-opacity sm:group-hover:opacity-100 hover:bg-accent"
             onClick={(e) => {
               e.stopPropagation();
               addNode(roadmapId, node.id);
@@ -116,7 +116,7 @@ export function TreeNode({ node, depth, roadmapId, isRoot }: TreeNodeProps) {
         </div>
 
         {/* Progress bar row */}
-        <div className="pl-6 pr-1 pb-0.5">
+        <div className="pl-8 sm:pl-6 pr-1 pb-0.5">
           <ProgressBar nodeId={node.id} />
         </div>
       </div>
