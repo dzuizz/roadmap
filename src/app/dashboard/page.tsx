@@ -108,8 +108,8 @@ export default function DashboardPage() {
       <header className="border-b">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <h1 className="text-lg font-semibold">Ada Roadmap</h1>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="hidden sm:inline text-sm text-muted-foreground">
               {user?.email}
             </span>
             <Button variant="ghost" size="sm" onClick={signOut}>
@@ -120,8 +120,8 @@ export default function DashboardPage() {
       </header>
 
       {/* Content */}
-      <main className="mx-auto max-w-5xl px-4 py-8">
-        <div className="mb-6 flex items-center justify-between">
+      <main className="mx-auto max-w-5xl px-4 py-6 sm:py-8">
+        <div className="mb-4 sm:mb-6 flex items-center justify-between">
           <h2 className="text-xl font-semibold">Your Roadmaps</h2>
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
@@ -218,7 +218,7 @@ export default function DashboardPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="h-8 w-8 p-0 opacity-0 group-hover:opacity-100"
+                      className="h-8 w-8 p-0 sm:opacity-0 sm:group-hover:opacity-100"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <MoreIcon />

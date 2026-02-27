@@ -94,7 +94,29 @@ export function NodeDetail({ roadmapId, rootNodeId }: NodeDetailProps) {
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center justify-between border-b px-4 py-3">
-        <h3 className="text-sm font-medium">Node Details</h3>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-7 w-7 p-0 sm:hidden"
+            onClick={() => selectNode(null)}
+          >
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18"
+              />
+            </svg>
+          </Button>
+          <h3 className="text-sm font-medium">Node Details</h3>
+        </div>
         <div className="flex items-center gap-2">
           {saving && (
             <span className="text-xs text-muted-foreground">Saving...</span>
@@ -102,7 +124,7 @@ export function NodeDetail({ roadmapId, rootNodeId }: NodeDetailProps) {
           <Button
             variant="ghost"
             size="sm"
-            className="h-7 w-7 p-0"
+            className="h-7 w-7 p-0 hidden sm:flex"
             onClick={() => selectNode(null)}
           >
             <svg

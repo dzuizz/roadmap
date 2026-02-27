@@ -25,9 +25,9 @@ export default function LandingPage() {
       </header>
 
       {/* Hero */}
-      <main className="flex flex-1 flex-col items-center justify-center px-4 py-24">
-        <div className="mx-auto max-w-2xl text-center space-y-6">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl">
+      <main className="flex flex-1 flex-col items-center justify-center px-4 py-12 sm:py-24">
+        <div className="mx-auto max-w-2xl text-center space-y-4 sm:space-y-6">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-5xl">
             Build your own roadmaps
           </h1>
           <p className="text-lg text-muted-foreground">
@@ -45,7 +45,7 @@ export default function LandingPage() {
         </div>
 
         {/* Feature grid */}
-        <div className="mx-auto mt-20 grid max-w-4xl gap-8 sm:grid-cols-3">
+        <div className="mx-auto mt-12 sm:mt-20 grid max-w-4xl gap-6 sm:gap-8 sm:grid-cols-3">
           <div className="space-y-2">
             <h3 className="font-medium">Tree-based structure</h3>
             <p className="text-sm text-muted-foreground">
