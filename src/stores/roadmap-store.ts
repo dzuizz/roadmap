@@ -27,7 +27,7 @@ interface RoadmapEditorState {
 
   loadNodes: (roadmapId: string, rootNodeId?: string) => Promise<void>;
   addNode: (roadmapId: string, parentId: string) => Promise<void>;
-  updateNode: (nodeId: string, updates: Partial<Pick<Node, "title" | "description" | "link" | "is_completed">>) => Promise<void>;
+  updateNode: (nodeId: string, updates: Partial<Pick<Node, "title" | "description" | "link" | "isCompleted">>) => Promise<void>;
   deleteNode: (nodeId: string, roadmapId: string) => Promise<void>;
   selectNode: (nodeId: string | null) => void;
   toggleExpand: (nodeId: string) => void;
@@ -46,11 +46,11 @@ function buildChildrenIndex(nodes: Map<string, Node>): Map<string, string[]> {
   const index = new Map<string, string[]>();
   // Group by parent
   for (const node of nodes.values()) {
-    if (node.parent_id) {
-      let siblings = index.get(node.parent_id);
+    if (node.parentId) {
+      let siblings = index.get(node.parentId);
       if (!siblings) {
         siblings = [];
-        index.set(node.parent_id, siblings);
+        index.set(node.parentId, siblings);
       }
       siblings.push(node.id);
     }
@@ -89,7 +89,7 @@ export const useRoadmapStore = create<RoadmapEditorState>((set, get) => ({
       // Expand root and first-level children by default
       const expanded = new Set<string>();
       for (const node of nodes) {
-        if (!node.parent_id) {
+        if (!node.parentId) {
           expanded.add(node.id);
           // Expand first-level children
           const kids = childrenIndex.get(node.id);
@@ -162,7 +162,7 @@ export const useRoadmapStore = create<RoadmapEditorState>((set, get) => ({
 
     set({ saving: true });
     try {
-      const updated = await nodesApi.updateNode(nodeId, updates);
+      const updated = await nodesApi.updateNode(nodeId, updates, currentRoadmapId!);
       set((state) => {
         const newNodes = new Map(state.nodes);
         newNodes.set(nodeId, updated);
@@ -269,7 +269,7 @@ export const useRoadmapStore = create<RoadmapEditorState>((set, get) => ({
     const childIds = state.childrenIndex.get(nodeId);
     if (!childIds || childIds.length === 0) {
       const node = state.nodes.get(nodeId);
-      return { completed: node?.is_completed ? 1 : 0, total: 1 };
+      return { completed: node?.isCompleted ? 1 : 0, total: 1 };
     }
     let completed = 0;
     for (const cid of childIds) {
@@ -277,7 +277,7 @@ export const useRoadmapStore = create<RoadmapEditorState>((set, get) => ({
       if (!child) continue;
       const grandchildIds = state.childrenIndex.get(cid);
       if (!grandchildIds || grandchildIds.length === 0) {
-        if (child.is_completed) completed++;
+        if (child.isCompleted) completed++;
       } else {
         const childProgress = state.getProgress(cid);
         if (childProgress.completed === childProgress.total) completed++;
@@ -306,8 +306,9 @@ export const useRoadmapStore = create<RoadmapEditorState>((set, get) => ({
   },
 
   deleteTrashEntry: async (entryId) => {
+    const { currentRoadmapId } = get();
     try {
-      await nodesApi.permanentlyDeleteTrashEntry(entryId);
+      await nodesApi.permanentlyDeleteTrashEntry(entryId, currentRoadmapId!);
       set((state) => ({
         trashEntries: state.trashEntries.filter((e) => e.id !== entryId),
       }));
