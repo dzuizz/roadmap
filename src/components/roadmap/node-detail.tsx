@@ -37,20 +37,22 @@ export function NodeDetail({ roadmapId, rootNodeId }: NodeDetailProps) {
   } = useRoadmapStore();
 
   const node = selectedNodeId ? nodes.get(selectedNodeId) : null;
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [link, setLink] = useState("");
+
+  // Store the last synced nodeId in state so we can detect node changes
+  const [syncedNodeId, setSyncedNodeId] = useState<string | undefined>(node?.id);
+  const [title, setTitle] = useState(node?.title ?? "");
+  const [description, setDescription] = useState(node?.description ?? "");
+  const [link, setLink] = useState(node?.link ?? "");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  // Sync local state when selected node changes
-  useEffect(() => {
-    if (node) {
-      setTitle(node.title);
-      setDescription(node.description || "");
-      setLink(node.link || "");
-    }
-  }, [node?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Reset form fields when the selected node changes (React-recommended derived state pattern)
+  if (node && node.id !== syncedNodeId) {
+    setSyncedNodeId(node.id);
+    setTitle(node.title);
+    setDescription(node.description ?? "");
+    setLink(node.link ?? "");
+  }
 
   const debouncedUpdate = useCallback(
     (field: string, value: string) => {
@@ -63,6 +65,17 @@ export function NodeDetail({ roadmapId, rootNodeId }: NodeDetailProps) {
     [selectedNodeId, updateNode]
   );
 
+  const isRoot = node?.id === rootNodeId;
+
+  // Listen for keyboard-triggered delete requests
+  useEffect(() => {
+    function onRequestDelete() {
+      if (!isRoot) setDeleteDialogOpen(true);
+    }
+    window.addEventListener("roadmap:request-delete", onRequestDelete);
+    return () => window.removeEventListener("roadmap:request-delete", onRequestDelete);
+  }, [isRoot]);
+
   if (!node) {
     return (
       <div className="flex h-full items-center justify-center p-6">
@@ -73,18 +86,8 @@ export function NodeDetail({ roadmapId, rootNodeId }: NodeDetailProps) {
     );
   }
 
-  const isRoot = node.id === rootNodeId;
   const childCount = getChildren(node.id).length;
   const descendantCount = getDescendantCount(node.id);
-
-  // Listen for keyboard-triggered delete requests
-  useEffect(() => {
-    function onRequestDelete() {
-      if (!isRoot) setDeleteDialogOpen(true);
-    }
-    window.addEventListener("roadmap:request-delete", onRequestDelete);
-    return () => window.removeEventListener("roadmap:request-delete", onRequestDelete);
-  }, [isRoot]);
 
   const handleDelete = () => {
     deleteNode(node.id, roadmapId);

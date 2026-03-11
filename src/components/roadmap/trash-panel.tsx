@@ -10,6 +10,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import type { NodeSnapshot } from "@/types/database";
 
 interface TrashPanelProps {
   roadmapId: string;
@@ -51,10 +52,11 @@ export function TrashPanel({ roadmapId, open, onOpenChange }: TrashPanelProps) {
               {trashEntries.map((entry) => {
                 const snapshot = entry.nodeSnapshot;
                 const nodeCount = countSnapshotNodes(snapshot);
+                const now = new Date();
                 const daysLeft = Math.max(
                   0,
                   Math.ceil(
-                    (new Date(entry.expiresAt).getTime() - Date.now()) /
+                    (new Date(entry.expiresAt).getTime() - now.getTime()) /
                       (1000 * 60 * 60 * 24)
                   )
                 );
