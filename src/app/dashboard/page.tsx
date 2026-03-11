@@ -36,7 +36,7 @@ import {
 export default function DashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading, signOut } = useAuthStore();
-  const [roadmaps, setRoadmaps] = useState<Roadmap[]>([]);
+  const [roadmaps, setRoadmaps] = useState<(Roadmap & { role?: string })[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Roadmap | null>(null);
@@ -194,7 +194,14 @@ export default function DashboardPage() {
                 onClick={() => router.push(`/roadmap/${roadmap.id}`)}
               >
                 <div className="min-w-0 flex-1">
-                  <h3 className="font-medium">{roadmap.title}</h3>
+                  <h3 className="font-medium">
+                    {roadmap.title}
+                    {roadmap.role && roadmap.role !== "owner" && (
+                      <span className="ml-2 inline-flex items-center rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                        Shared
+                      </span>
+                    )}
+                  </h3>
                   {roadmap.description && (
                     <p className="mt-0.5 truncate text-sm text-muted-foreground">
                       {roadmap.description}
@@ -202,7 +209,7 @@ export default function DashboardPage() {
                   )}
                   <p className="mt-1 text-xs text-muted-foreground">
                     Updated{" "}
-                    {new Date(roadmap.updated_at).toLocaleDateString(
+                    {new Date(roadmap.updatedAt).toLocaleDateString(
                       undefined,
                       {
                         month: "short",
