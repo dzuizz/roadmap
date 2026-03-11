@@ -7,7 +7,8 @@ import {
   GithubAuthProvider,
   type User,
 } from "firebase/auth";
-import { getFirebaseAuth } from "@/lib/firebase/client";
+import { doc, setDoc } from "firebase/firestore";
+import { getFirebaseAuth, getFirestoreDb } from "@/lib/firebase/client";
 
 interface AuthState {
   user: User | null;
@@ -30,6 +31,14 @@ export const useAuthStore = create<AuthState>((set) => ({
     const auth = getFirebaseAuth();
     onAuthStateChanged(auth, (user) => {
       set({ user, loading: false });
+      if (user) {
+        const db = getFirestoreDb();
+        setDoc(
+          doc(db, "users", user.uid),
+          { email: user.email, displayName: user.displayName },
+          { merge: true }
+        );
+      }
     });
   },
 
