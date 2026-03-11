@@ -1,44 +1,46 @@
 import { create } from "zustand";
-import { createClient } from "@/lib/supabase/client";
-import type { User, AuthChangeEvent, Session } from "@supabase/supabase-js";
+import {
+  onAuthStateChanged,
+  signInWithPopup,
+  signOut as firebaseSignOut,
+  GoogleAuthProvider,
+  GithubAuthProvider,
+  type User,
+} from "firebase/auth";
+import { getFirebaseAuth } from "@/lib/firebase/client";
 
 interface AuthState {
   user: User | null;
   loading: boolean;
-  initialize: () => Promise<void>;
+  initialize: () => void;
   signInWithOAuth: (provider: "google" | "github") => Promise<void>;
   signOut: () => Promise<void>;
 }
+
+const providers = {
+  google: () => new GoogleAuthProvider(),
+  github: () => new GithubAuthProvider(),
+};
 
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   loading: true,
 
-  initialize: async () => {
-    const supabase = createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    set({ user, loading: false });
-
-    supabase.auth.onAuthStateChange((_event: AuthChangeEvent, session: Session | null) => {
-      set({ user: session?.user ?? null });
+  initialize: () => {
+    const auth = getFirebaseAuth();
+    onAuthStateChanged(auth, (user) => {
+      set({ user, loading: false });
     });
   },
 
   signInWithOAuth: async (provider) => {
-    const supabase = createClient();
-    await supabase.auth.signInWithOAuth({
-      provider,
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-      },
-    });
+    const auth = getFirebaseAuth();
+    await signInWithPopup(auth, providers[provider]());
   },
 
   signOut: async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
+    const auth = getFirebaseAuth();
+    await firebaseSignOut(auth);
     set({ user: null });
   },
 }));
