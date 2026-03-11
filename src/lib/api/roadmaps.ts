@@ -1,108 +1,205 @@
-import { createClient } from "@/lib/supabase/client";
-import type { Roadmap } from "@/types/database";
+import {
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  updateDoc,
+  deleteDoc,
+  writeBatch,
+  collection,
+  query,
+  orderBy,
+  serverTimestamp,
+  type Timestamp,
+} from "firebase/firestore";
+import { getFirestoreDb, getFirebaseAuth } from "@/lib/firebase/client";
+import type { Roadmap, UserRoadmapEntry } from "@/types/database";
 import { v4 as uuidv4 } from "uuid";
 
-function getSupabase() {
-  return createClient();
+function toISOString(ts: Timestamp | string): string {
+  if (typeof ts === "string") return ts;
+  return ts.toDate().toISOString();
 }
 
-function throwIfError(error: { message: string; code?: string; details?: string; hint?: string } | null) {
-  if (error) {
-    throw new Error(`${error.message}${error.hint ? ` (${error.hint})` : ""}${error.code ? ` [${error.code}]` : ""}`);
-  }
-}
+export async function fetchRoadmaps(): Promise<(Roadmap & { role: string })[]> {
+  const db = getFirestoreDb();
+  const auth = getFirebaseAuth();
+  const userId = auth.currentUser?.uid;
+  if (!userId) throw new Error("Not authenticated");
 
-export async function fetchRoadmaps(): Promise<Roadmap[]> {
-  const supabase = getSupabase();
-  const { data, error } = await supabase
-    .from("roadmaps")
-    .select("*")
-    .order("updated_at", { ascending: false });
+  const q = query(
+    collection(db, "userRoadmaps", userId, "roadmaps"),
+    orderBy("updatedAt", "desc")
+  );
+  const snap = await getDocs(q);
 
-  throwIfError(error);
-  return data ?? [];
+  return snap.docs.map((d) => {
+    const data = d.data() as UserRoadmapEntry & {
+      description?: string | null;
+      ownerId?: string;
+      rootNodeId?: string | null;
+      createdAt?: Timestamp | string;
+    };
+    return {
+      id: d.id,
+      ownerId: data.ownerId ?? userId,
+      title: data.title,
+      description: data.description ?? null,
+      rootNodeId: data.rootNodeId ?? null,
+      createdAt: data.createdAt ? toISOString(data.createdAt as Timestamp) : "",
+      updatedAt: toISOString(data.updatedAt as unknown as Timestamp),
+      role: data.role,
+    };
+  });
 }
 
 export async function fetchRoadmap(id: string): Promise<Roadmap | null> {
-  const supabase = getSupabase();
-  const { data, error } = await supabase
-    .from("roadmaps")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-
-  throwIfError(error);
-  return data;
+  const db = getFirestoreDb();
+  const snap = await getDoc(doc(db, "roadmaps", id));
+  if (!snap.exists()) return null;
+  const data = snap.data();
+  return {
+    id: snap.id,
+    ownerId: data.ownerId,
+    title: data.title,
+    description: data.description ?? null,
+    rootNodeId: data.rootNodeId ?? null,
+    createdAt: toISOString(data.createdAt),
+    updatedAt: toISOString(data.updatedAt),
+  };
 }
 
 export async function createRoadmap(
   title: string,
   description?: string
 ): Promise<Roadmap> {
-  const supabase = getSupabase();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const db = getFirestoreDb();
+  const auth = getFirebaseAuth();
+  const user = auth.currentUser;
   if (!user) throw new Error("Not authenticated");
 
   const roadmapId = uuidv4();
   const rootNodeId = uuidv4();
+  const now = serverTimestamp();
 
-  // 1. Create roadmap without root_node_id (node doesn't exist yet)
-  const { error: roadmapError } = await supabase
-    .from("roadmaps")
-    .insert({
-      id: roadmapId,
-      user_id: user.id,
-      title,
-      description: description || null,
-    });
+  const batch = writeBatch(db);
 
-  throwIfError(roadmapError);
+  // 1. Roadmap document
+  batch.set(doc(db, "roadmaps", roadmapId), {
+    ownerId: user.uid,
+    title,
+    description: description || null,
+    rootNodeId,
+    createdAt: now,
+    updatedAt: now,
+  });
 
-  // 2. Create the root node
-  const { error: nodeError } = await supabase.from("nodes").insert({
-    id: rootNodeId,
-    roadmap_id: roadmapId,
-    parent_id: null,
+  // 2. Root node
+  batch.set(doc(db, "roadmaps", roadmapId, "nodes", rootNodeId), {
+    parentId: null,
     path: `/${rootNodeId}`,
     position: 0,
     title,
+    description: null,
+    link: null,
+    isCompleted: false,
+    createdAt: now,
+    updatedAt: now,
   });
 
-  throwIfError(nodeError);
+  // 3. Owner membership
+  batch.set(doc(db, "roadmaps", roadmapId, "members", user.uid), {
+    role: "owner",
+    addedAt: now,
+  });
 
-  // 3. Link root node back to roadmap
-  const { data: roadmap, error: updateError } = await supabase
-    .from("roadmaps")
-    .update({ root_node_id: rootNodeId })
-    .eq("id", roadmapId)
-    .select()
-    .single();
+  // 4. User roadmap index (denormalized for dashboard)
+  batch.set(doc(db, "userRoadmaps", user.uid, "roadmaps", roadmapId), {
+    role: "owner",
+    title,
+    description: description || null,
+    ownerId: user.uid,
+    rootNodeId,
+    createdAt: now,
+    updatedAt: now,
+  });
 
-  throwIfError(updateError);
+  await batch.commit();
 
-  return roadmap;
+  const nowISO = new Date().toISOString();
+  return {
+    id: roadmapId,
+    ownerId: user.uid,
+    title,
+    description: description || null,
+    rootNodeId,
+    createdAt: nowISO,
+    updatedAt: nowISO,
+  };
 }
 
 export async function updateRoadmap(
   id: string,
   updates: Partial<Pick<Roadmap, "title" | "description">>
 ): Promise<Roadmap> {
-  const supabase = getSupabase();
-  const { data, error } = await supabase
-    .from("roadmaps")
-    .update(updates)
-    .eq("id", id)
-    .select()
-    .single();
+  const db = getFirestoreDb();
+  const roadmapRef = doc(db, "roadmaps", id);
 
-  throwIfError(error);
-  return data;
+  await updateDoc(roadmapRef, {
+    ...updates,
+    updatedAt: serverTimestamp(),
+  });
+
+  // Update denormalized title in userRoadmaps for all members
+  if (updates.title) {
+    const membersSnap = await getDocs(
+      collection(db, "roadmaps", id, "members")
+    );
+    const batch = writeBatch(db);
+    for (const memberDoc of membersSnap.docs) {
+      batch.update(
+        doc(db, "userRoadmaps", memberDoc.id, "roadmaps", id),
+        { title: updates.title, updatedAt: serverTimestamp() }
+      );
+    }
+    await batch.commit();
+  }
+
+  const snap = await getDoc(roadmapRef);
+  const data = snap.data()!;
+  return {
+    id,
+    ownerId: data.ownerId,
+    title: data.title,
+    description: data.description ?? null,
+    rootNodeId: data.rootNodeId ?? null,
+    createdAt: toISOString(data.createdAt),
+    updatedAt: toISOString(data.updatedAt),
+  };
 }
 
 export async function deleteRoadmap(id: string): Promise<void> {
-  const supabase = getSupabase();
-  const { error } = await supabase.from("roadmaps").delete().eq("id", id);
-  throwIfError(error);
+  const db = getFirestoreDb();
+
+  // Delete all subcollections (nodes, trash, members)
+  // Firestore batches have a 500-operation limit. Chunk if needed.
+  const subcollections = ["nodes", "trash", "members"];
+  for (const sub of subcollections) {
+    const snap = await getDocs(collection(db, "roadmaps", id, sub));
+    const docs = snap.docs;
+    for (let i = 0; i < docs.length; i += 400) {
+      const chunk = docs.slice(i, i + 400);
+      const batch = writeBatch(db);
+      for (const d of chunk) {
+        batch.delete(d.ref);
+        if (sub === "members") {
+          batch.delete(doc(db, "userRoadmaps", d.id, "roadmaps", id));
+        }
+      }
+      await batch.commit();
+    }
+  }
+
+  // Delete the roadmap document
+  await deleteDoc(doc(db, "roadmaps", id));
 }
