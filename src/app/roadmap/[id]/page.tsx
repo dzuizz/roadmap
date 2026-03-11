@@ -11,6 +11,7 @@ import { CardView } from "@/components/roadmap/card-view";
 import { NodeDetail } from "@/components/roadmap/node-detail";
 import { Breadcrumbs } from "@/components/roadmap/breadcrumbs";
 import { TrashPanel } from "@/components/roadmap/trash-panel";
+import { ShareDialog } from "@/components/roadmap/share-dialog";
 import { ShortcutsDialog } from "@/components/roadmap/shortcuts-dialog";
 import { useKeyboardShortcuts } from "@/components/roadmap/use-keyboard-shortcuts";
 import { Button } from "@/components/ui/button";
@@ -31,6 +32,7 @@ export default function RoadmapEditorPage() {
   const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
   const [loading, setLoading] = useState(true);
   const [trashOpen, setTrashOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   const openTrash = useCallback(() => setTrashOpen(true), []);
@@ -147,6 +149,28 @@ export default function RoadmapEditorPage() {
             variant="ghost"
             size="sm"
             className="h-8 w-8 p-0 sm:w-auto sm:px-3 text-xs"
+            onClick={() => setShareOpen(true)}
+          >
+            <svg
+              className="h-3.5 w-3.5 sm:mr-1"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"
+              />
+            </svg>
+            <span className="hidden sm:inline">Share</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 sm:w-auto sm:px-3 text-xs"
             onClick={() => setTrashOpen(true)}
           >
             <svg
@@ -218,6 +242,14 @@ export default function RoadmapEditorPage() {
         roadmapId={roadmapId}
         open={trashOpen}
         onOpenChange={setTrashOpen}
+      />
+
+      {/* Share dialog */}
+      <ShareDialog
+        roadmapId={roadmapId}
+        roadmapTitle={roadmap.title}
+        open={shareOpen}
+        onOpenChange={setShareOpen}
       />
 
       {/* Shortcuts help */}
