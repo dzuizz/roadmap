@@ -36,7 +36,7 @@ export default function RoadmapEditorPage() {
   const openTrash = useCallback(() => setTrashOpen(true), []);
   const openHelp = useCallback(() => setShortcutsOpen(true), []);
 
-  useKeyboardShortcuts(roadmapId, roadmap?.root_node_id ?? null, openTrash, openHelp);
+  useKeyboardShortcuts(roadmapId, roadmap?.rootNodeId ?? null, openTrash, openHelp);
 
   useEffect(() => {
     if (authLoading) return;
@@ -56,7 +56,7 @@ export default function RoadmapEditorPage() {
           return;
         }
         setRoadmap(found);
-        await useRoadmapStore.getState().loadNodes(roadmapId, found.root_node_id ?? undefined);
+        await useRoadmapStore.getState().loadNodes(roadmapId, found.rootNodeId ?? undefined);
       } catch (error) {
         console.error("Failed to load roadmap:", error instanceof Error ? error.message : error);
         if (!cancelled) router.push("/dashboard");
@@ -104,7 +104,7 @@ export default function RoadmapEditorPage() {
           </Button>
           <Separator orientation="vertical" className="h-5 hidden sm:block" />
           <h1 className="text-sm font-medium truncate min-w-0">
-            {(roadmap.root_node_id && nodes.get(roadmap.root_node_id)?.title) || roadmap.title}
+            {(roadmap.rootNodeId && nodes.get(roadmap.rootNodeId)?.title) || roadmap.title}
           </h1>
         </div>
 
@@ -180,7 +180,7 @@ export default function RoadmapEditorPage() {
       </header>
 
       {/* Breadcrumbs (focus mode) */}
-      <Breadcrumbs rootNodeId={roadmap.root_node_id} />
+      <Breadcrumbs rootNodeId={roadmap.rootNodeId} />
 
       {/* Main content: view + detail panel */}
       <div className="flex flex-1 overflow-hidden relative">
@@ -192,12 +192,12 @@ export default function RoadmapEditorPage() {
           {viewMode === "list" ? (
             <TreeView
               roadmapId={roadmapId}
-              rootNodeId={roadmap.root_node_id}
+              rootNodeId={roadmap.rootNodeId}
             />
           ) : (
             <CardView
               roadmapId={roadmapId}
-              rootNodeId={roadmap.root_node_id}
+              rootNodeId={roadmap.rootNodeId}
             />
           )}
         </div>
@@ -207,7 +207,7 @@ export default function RoadmapEditorPage() {
           <div className="w-full sm:w-[340px] shrink-0 overflow-hidden">
             <NodeDetail
               roadmapId={roadmapId}
-              rootNodeId={roadmap.root_node_id}
+              rootNodeId={roadmap.rootNodeId}
             />
           </div>
         )}
