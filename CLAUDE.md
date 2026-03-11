@@ -18,21 +18,26 @@ No test framework is configured.
 
 ### Data Model
 
-Three Supabase tables (`supabase/schema.sql`):
-- **roadmaps** — owned by a user, points to a `root_node_id`
-- **nodes** — tree structure using adjacency list (`parent_id`) + materialized path (`path` like `/<root-uuid>/<child-uuid>/...`). Soft-deleted via `deleted_at`.
-- **trash_entries** — stores `node_snapshot` (recursive JSON of deleted subtree) for 30-day undo. On restore, snapshots are upserted back as live nodes.
+Firebase Firestore collections:
+- **roadmaps/{id}** — owned by a user, points to a `rootNodeId`, includes role-based membership
+- **roadmaps/{id}/nodes** — tree structure using adjacency list (`parentId`) + materialized path (`path` like `/<root-uuid>/<child-uuid>/...`). Hard-deleted; deleted subtrees are stored as trash snapshots.
+- **roadmaps/{id}/members** — per-roadmap membership with roles: `owner`, `editor`, `viewer`
+- **roadmaps/{id}/trash** — stores node snapshots (recursive JSON of deleted subtree) for undo/restore
+- **userRoadmaps/{userId}/roadmaps** — denormalized roadmap metadata for fast dashboard queries without cross-collection joins
 
-Roadmap creation is a 3-step sequence: insert roadmap → insert root node → update roadmap with `root_node_id`.
+Roadmap creation is a 3-step sequence: insert roadmap → insert root node → update roadmap with `rootNodeId`.
 
 ### Client State (Zustand)
 
 - `roadmap-store.ts` — Flat `Map<id, Node>` for O(1) lookups + pre-built `childrenIndex` (`Map<parentId, sortedChildIds[]>`). Updates are optimistic. Root node title changes sync back to the roadmap title.
-- `auth-store.ts` — Supabase auth state with OAuth (Google/GitHub).
+- `auth-store.ts` — Firebase Auth state with popup-based OAuth (Google/GitHub). No middleware or server-side session handling required.
 
 ### API Layer
 
-`src/lib/api/` contains client-side Supabase calls (not server actions). Each module uses lazy singleton client from `src/lib/supabase/client.ts`. Errors are thrown via `throwIfError()` helper.
+`src/lib/api/` contains client-side Firebase calls (not server actions). Each module imports from `src/lib/firebase/`. Errors are thrown via standard try/catch. Modules:
+- `roadmaps.ts` — Roadmap CRUD
+- `nodes.ts` — Node CRUD, deletion, trash restore
+- `members.ts` — Role-based collaboration (invite, update role, remove member)
 
 ### Key Patterns
 
@@ -40,8 +45,9 @@ Roadmap creation is a 3-step sequence: insert roadmap → insert root node → u
 - **Path imports**: `@/*` maps to `./src/*`
 - **UI components**: shadcn/ui in `src/components/ui/`, roadmap-specific in `src/components/roadmap/`
 - **Dark mode**: class-based via ThemeProvider, system preference default
-- **IDs**: client-generated UUIDs (`uuid` package) rather than database-generated
+- **IDs**: client-generated UUIDs (`uuid` package)
+- **Security**: Firestore security rules in `firestore.rules` enforce ownership and role checks — no RLS, no middleware
 
 ### Auth Flow
 
-OAuth callback at `/auth/callback/route.ts` exchanges code for session. Middleware (`src/middleware.ts`) refreshes sessions. RLS policies on all tables enforce ownership through roadmap `user_id`.
+Firebase Auth with popup-based OAuth (`signInWithPopup`). No server-side callback route or middleware required. Auth state is managed client-side in `auth-store.ts`. Access control is enforced via Firestore security rules per roadmap role.
