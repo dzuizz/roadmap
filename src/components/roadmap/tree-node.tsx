@@ -34,7 +34,7 @@ export function TreeNode({ node, depth, roadmapId, isRoot }: TreeNodeProps) {
     if (!isLeaf) return;
     e.stopPropagation();
     useRoadmapStore.getState().updateNode(node.id, {
-      is_completed: !node.is_completed,
+      isCompleted: !node.isCompleted,
     });
   };
 
@@ -84,14 +84,14 @@ export function TreeNode({ node, depth, roadmapId, isRoot }: TreeNodeProps) {
           <button
             className={cn(
               "flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border transition-colors",
-              node.is_completed
+              node.isCompleted
                 ? "border-green-500/60 bg-green-500/15 text-green-600 dark:text-green-400"
                 : "border-muted-foreground/30 hover:border-muted-foreground/50"
             )}
             onClick={handleToggleComplete}
-            title={node.is_completed ? "Mark as incomplete" : "Mark as complete"}
+            title={node.isCompleted ? "Mark as incomplete" : "Mark as complete"}
           >
-            {node.is_completed && (
+            {node.isCompleted && (
               <svg className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
               </svg>
@@ -116,7 +116,7 @@ export function TreeNode({ node, depth, roadmapId, isRoot }: TreeNodeProps) {
         {/* Title */}
         <span className={cn(
           "flex-1 truncate text-sm",
-          isLeaf && node.is_completed && "text-muted-foreground line-through"
+          isLeaf && node.isCompleted && "text-muted-foreground line-through"
         )}>
           {node.title}
         </span>

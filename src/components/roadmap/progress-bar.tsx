@@ -25,7 +25,7 @@ export function ProgressBar({ nodeId, className }: ProgressBarProps) {
     if (!isLeaf) return;
     e.stopPropagation();
     useRoadmapStore.getState().updateNode(nodeId, {
-      is_completed: !node.is_completed,
+      isCompleted: !node.isCompleted,
     });
   };
 
@@ -36,7 +36,7 @@ export function ProgressBar({ nodeId, className }: ProgressBarProps) {
       role={isLeaf ? "button" : undefined}
       tabIndex={isLeaf ? 0 : undefined}
       onKeyDown={isLeaf ? (e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); handleClick(e as unknown as React.MouseEvent); } } : undefined}
-      title={isLeaf ? (node.is_completed ? "Mark as incomplete" : "Mark as complete") : `${progress.completed}/${progress.total} complete`}
+      title={isLeaf ? (node.isCompleted ? "Mark as incomplete" : "Mark as complete") : `${progress.completed}/${progress.total} complete`}
     >
       {/* Enlarged click target: py-1 gives 8px above + below the 6px bar = 22px total hit area */}
       <div
@@ -69,9 +69,9 @@ export function ProgressBar({ nodeId, className }: ProgressBarProps) {
       {isLeaf ? (
         <span className={cn(
           "shrink-0 text-[10px] tabular-nums",
-          node.is_completed ? "text-green-600 dark:text-green-400" : "text-muted-foreground"
+          node.isCompleted ? "text-green-600 dark:text-green-400" : "text-muted-foreground"
         )}>
-          {node.is_completed ? "Done" : "Todo"}
+          {node.isCompleted ? "Done" : "Todo"}
         </span>
       ) : (
         <span className="shrink-0 text-[10px] tabular-nums text-muted-foreground">
