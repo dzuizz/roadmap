@@ -1,0 +1,51 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function getMemberRole(roadmapId) {
+      return get(/databases/$(database)/documents/roadmaps/$(roadmapId)/members/$(request.auth.uid)).data.role;
+    }
+
+    function isMember(roadmapId) {
+      return exists(/databases/$(database)/documents/roadmaps/$(roadmapId)/members/$(request.auth.uid));
+    }
+
+    function isEditor(roadmapId) {
+      let role = getMemberRole(roadmapId);
+      return role == "owner" || role == "editor";
+    }
+
+    function isOwner(roadmapId) {
+      return getMemberRole(roadmapId) == "owner";
+    }
+
+    match /roadmaps/{roadmapId} {
+      allow read: if isMember(roadmapId);
+      allow create: if request.auth != null
+                    && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isEditor(roadmapId);
+      allow delete: if isOwner(roadmapId);
+
+      match /members/{userId} {
+        allow read: if isMember(roadmapId);
+        allow write: if isOwner(roadmapId);
+      }
+
+      match /nodes/{nodeId} {
+        allow read: if isMember(roadmapId);
+        allow create, update, delete: if isEditor(roadmapId);
+      }
+
+      match /trash/{trashId} {
+        allow read: if isMember(roadmapId);
+        allow create, delete: if isEditor(roadmapId);
+      }
+    }
+
+    match /userRoadmaps/{userId}/roadmaps/{roadmapId} {
+      allow read: if request.auth.uid == userId;
+      allow write: if request.auth.uid == userId
+                   || isOwner(roadmapId);
+    }
+  }
+}
