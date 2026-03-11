@@ -243,7 +243,7 @@ export function NodeDetail({ roadmapId, rootNodeId }: NodeDetailProps) {
           <div className="flex justify-between">
             <span>Created</span>
             <span>
-              {new Date(node.created_at).toLocaleDateString(undefined, {
+              {new Date(node.createdAt).toLocaleDateString(undefined, {
                 month: "short",
                 day: "numeric",
                 year: "numeric",
