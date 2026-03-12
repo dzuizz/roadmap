@@ -2,6 +2,7 @@ import { create } from "zustand";
 import {
   onAuthStateChanged,
   signInWithPopup,
+  signInWithRedirect,
   signOut as firebaseSignOut,
   GoogleAuthProvider,
   GithubAuthProvider,
@@ -44,7 +45,16 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   signInWithOAuth: async (provider) => {
     const auth = getFirebaseAuth();
-    await signInWithPopup(auth, providers[provider]());
+    const authProvider = providers[provider]();
+    try {
+      await signInWithPopup(auth, authProvider);
+    } catch (error) {
+      if (error instanceof Error && "code" in error && (error as { code: string }).code === "auth/popup-blocked") {
+        await signInWithRedirect(auth, authProvider);
+      } else {
+        throw error;
+      }
+    }
   },
 
   signOut: async () => {
