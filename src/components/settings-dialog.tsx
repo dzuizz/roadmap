@@ -21,13 +21,17 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
   const [apiKey, setApiKey] = useState("");
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
       setSaved(false);
-      getOpenAIApiKey().then((key) => {
-        if (key) setApiKey(key);
-      });
+      setError(null);
+      getOpenAIApiKey()
+        .then((key) => {
+          if (key) setApiKey(key);
+        })
+        .catch(() => {});
     } else {
       setApiKey("");
     }
@@ -35,12 +39,14 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
 
   const handleSave = async () => {
     setLoading(true);
+    setError(null);
     try {
       await saveOpenAIApiKey(apiKey.trim());
       setSaved(true);
       setTimeout(() => setSaved(false), 2000);
-    } catch (error) {
-      console.error("Failed to save API key:", error);
+    } catch (err) {
+      setError("Failed to save API key. Please try again.");
+      console.error("Failed to save API key:", err);
     } finally {
       setLoading(false);
     }
@@ -63,10 +69,13 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               onChange={(e) => setApiKey(e.target.value)}
             />
             <p className="text-xs text-muted-foreground">
-              Required for AI roadmap generation. Your key is stored securely
-              and only accessible by you.
+              Required for AI roadmap generation. Your key is stored in your
+              account and only accessible by you.
             </p>
           </div>
+          {error && (
+            <p className="text-sm text-destructive">{error}</p>
+          )}
           <div className="flex items-center justify-end gap-2">
             {saved && (
               <span className="text-xs text-green-600 dark:text-green-400">

@@ -69,6 +69,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Prompt is required" }, { status: 400 });
     }
 
+    if (prompt.trim().length > 1000) {
+      return NextResponse.json({ error: "Prompt is too long (max 1000 characters)" }, { status: 400 });
+    }
+
     // Read API key from Firestore
     const db = getAdminFirestore();
     const userDoc = await db.collection("users").doc(uid).get();

@@ -9,8 +9,11 @@ function getAdminApp(): App {
     if (getApps().length > 0) {
       app = getApps()[0];
     } else {
+      if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
+        throw new Error("FIREBASE_SERVICE_ACCOUNT env var is not set");
+      }
       const serviceAccount = JSON.parse(
-        Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT!, "base64").toString()
+        Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT, "base64").toString()
       );
       app = initializeApp({ credential: cert(serviceAccount) });
     }

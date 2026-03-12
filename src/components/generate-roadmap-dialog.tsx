@@ -73,7 +73,9 @@ export function GenerateRoadmapDialog({
     if (open) {
       setError(null);
       setPrompt("");
-      getOpenAIApiKey().then((key) => setHasApiKey(!!key));
+      getOpenAIApiKey()
+        .then((key) => setHasApiKey(!!key))
+        .catch(() => setHasApiKey(null));
     }
   }, [open]);
 
