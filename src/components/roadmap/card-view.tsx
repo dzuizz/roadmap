@@ -1,16 +1,18 @@
 "use client";
 
-import { useRef, useEffect, useState, useCallback } from "react";
+import { useRef, useEffect, useState, useMemo } from "react";
 import { useRoadmapStore } from "@/stores/roadmap-store";
 import { ProgressBar } from "./progress-bar";
 import { cn } from "@/lib/utils";
 import type { Node } from "@/types/database";
 
 function useIsMobile() {
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return window.matchMedia("(max-width: 639px)").matches;
+  });
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 639px)");
-    setIsMobile(mq.matches);
     const handler = (e: MediaQueryListEvent) => setIsMobile(e.matches);
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
@@ -44,14 +46,17 @@ export function CardView({ roadmapId, rootNodeId }: CardViewProps) {
   const CARD_GAP_Y = isMobile ? 48 : 60;
 
   const containerRef = useRef<HTMLDivElement>(null);
-  const [layout, setLayout] = useState<LayoutNode | null>(null);
-  const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
 
   const effectiveRootId = focusedNodeId || rootNodeId;
   const rootNode = effectiveRootId ? nodes.get(effectiveRootId) : null;
 
-  const buildLayout = useCallback(
-    (nodeId: string, depth: number): LayoutNode | null => {
+  const layoutResult = useMemo(() => {
+    if (!rootNode) return null;
+    const cw = CARD_WIDTH;
+    const gx = CARD_GAP_X;
+    const gy = CARD_GAP_Y;
+
+    function buildLayout(nodeId: string, depth: number): LayoutNode | null {
       const node = nodes.get(nodeId);
       if (!node) return null;
 
@@ -66,8 +71,8 @@ export function CardView({ roadmapId, rootNodeId }: CardViewProps) {
         return {
           id: nodeId,
           x: 0,
-          y: depth * (CARD_MIN_HEIGHT + CARD_GAP_Y),
-          width: CARD_WIDTH,
+          y: depth * (CARD_MIN_HEIGHT + gy),
+          width: cw,
           height,
           children: [],
         };
@@ -76,42 +81,41 @@ export function CardView({ roadmapId, rootNodeId }: CardViewProps) {
       // Position children side by side
       let currentX = 0;
       for (const child of childLayouts) {
-        const subtreeWidth = getSubtreeWidth(child, CARD_WIDTH, CARD_GAP_X);
+        const subtreeWidth = getSubtreeWidth(child, cw, gx);
         offsetSubtree(child, currentX, 0);
-        currentX += subtreeWidth + CARD_GAP_X;
+        currentX += subtreeWidth + gx;
       }
 
-      const totalChildrenWidth = currentX - CARD_GAP_X;
-      const centerX = totalChildrenWidth / 2 - CARD_WIDTH / 2;
+      const totalChildrenWidth = currentX - gx;
+      const centerX = totalChildrenWidth / 2 - cw / 2;
 
       return {
         id: nodeId,
         x: centerX,
-        y: depth * (CARD_MIN_HEIGHT + CARD_GAP_Y),
-        width: CARD_WIDTH,
+        y: depth * (CARD_MIN_HEIGHT + gy),
+        width: cw,
         height,
         children: childLayouts,
       };
-    },
-    [nodes, getChildren, CARD_WIDTH, CARD_GAP_X, CARD_GAP_Y]
-  );
+    }
 
-  useEffect(() => {
-    if (!rootNode) return;
     const tree = buildLayout(rootNode.id, 0);
-    if (!tree) return;
+    if (!tree) return null;
 
     // Normalize so minimum x is 0
     const minX = findMinX(tree);
     offsetSubtree(tree, -minX + 40, 40); // 40px padding
 
     const bounds = findBounds(tree);
-    setLayout(tree);
-    setCanvasSize({
-      width: bounds.maxX + CARD_WIDTH + 80,
-      height: bounds.maxY + CARD_MIN_HEIGHT + 80,
-    });
-  }, [rootNode, buildLayout]);
+    return {
+      layout: tree,
+      canvasWidth: bounds.maxX + cw + 80,
+      canvasHeight: bounds.maxY + CARD_MIN_HEIGHT + 80,
+    };
+  }, [rootNode, nodes, getChildren, CARD_WIDTH, CARD_GAP_X, CARD_GAP_Y]);
+
+  const layout = layoutResult?.layout ?? null;
+  const canvasSize = { width: layoutResult?.canvasWidth ?? 0, height: layoutResult?.canvasHeight ?? 0 };
 
   if (loading) {
     return (

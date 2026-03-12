@@ -1,0 +1,74 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function getMemberRole(roadmapId) {
+      return get(/databases/$(database)/documents/roadmaps/$(roadmapId)/members/$(request.auth.uid)).data.role;
+    }
+
+    function isMember(roadmapId) {
+      return exists(/databases/$(database)/documents/roadmaps/$(roadmapId)/members/$(request.auth.uid));
+    }
+
+    function isEditor(roadmapId) {
+      let role = getMemberRole(roadmapId);
+      return role == "owner" || role == "editor";
+    }
+
+    function isOwner(roadmapId) {
+      return getMemberRole(roadmapId) == "owner";
+    }
+
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth.uid == userId;
+    }
+
+    match /roadmaps/{roadmapId} {
+      allow read: if isMember(roadmapId);
+      allow create: if request.auth != null
+                    && request.resource.data.ownerId == request.auth.uid;
+      allow update: if isEditor(roadmapId);
+      // Fallback: allow delete if user is the ownerId on the roadmap doc
+      // (members may already be deleted during cascading delete)
+      allow delete: if isOwner(roadmapId)
+                    || resource.data.ownerId == request.auth.uid;
+
+      match /members/{userId} {
+        allow read: if isMember(roadmapId);
+        // Allow owner to manage members, OR allow a user to create their own
+        // owner membership during roadmap creation (batch write, members doc
+        // doesn't exist yet so isOwner() would fail)
+        allow create: if isOwner(roadmapId)
+                      || (request.auth.uid == userId
+                          && request.resource.data.role == "owner");
+        allow update, delete: if isOwner(roadmapId)
+                              || get(/databases/$(database)/documents/roadmaps/$(roadmapId)).data.ownerId == request.auth.uid;
+      }
+
+      match /nodes/{nodeId} {
+        allow read: if isMember(roadmapId);
+        allow create: if isEditor(roadmapId)
+                      || getAfter(/databases/$(database)/documents/roadmaps/$(roadmapId)).data.ownerId == request.auth.uid;
+        allow update: if isEditor(roadmapId);
+        // Allow delete by owner via roadmap doc fallback (for cascading delete
+        // when members subcollection may not exist yet or is being deleted)
+        allow delete: if isEditor(roadmapId)
+                      || get(/databases/$(database)/documents/roadmaps/$(roadmapId)).data.ownerId == request.auth.uid;
+      }
+
+      match /trash/{trashId} {
+        allow read: if isMember(roadmapId);
+        allow create: if isEditor(roadmapId);
+        allow delete: if isEditor(roadmapId)
+                      || get(/databases/$(database)/documents/roadmaps/$(roadmapId)).data.ownerId == request.auth.uid;
+      }
+    }
+
+    match /userRoadmaps/{userId}/roadmaps/{roadmapId} {
+      allow read: if request.auth.uid == userId;
+      allow write: if request.auth.uid == userId
+                   || isOwner(roadmapId);
+    }
+  }
+}

@@ -11,6 +11,7 @@ import { CardView } from "@/components/roadmap/card-view";
 import { NodeDetail } from "@/components/roadmap/node-detail";
 import { Breadcrumbs } from "@/components/roadmap/breadcrumbs";
 import { TrashPanel } from "@/components/roadmap/trash-panel";
+import { ShareDialog } from "@/components/roadmap/share-dialog";
 import { ShortcutsDialog } from "@/components/roadmap/shortcuts-dialog";
 import { useKeyboardShortcuts } from "@/components/roadmap/use-keyboard-shortcuts";
 import { Button } from "@/components/ui/button";
@@ -26,16 +27,18 @@ export default function RoadmapEditorPage() {
   const selectedNodeId = useRoadmapStore((s) => s.selectedNodeId);
   const viewMode = useRoadmapStore((s) => s.viewMode);
   const setViewMode = useRoadmapStore((s) => s.setViewMode);
+  const nodes = useRoadmapStore((s) => s.nodes);
 
   const [roadmap, setRoadmap] = useState<Roadmap | null>(null);
   const [loading, setLoading] = useState(true);
   const [trashOpen, setTrashOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
   const [shortcutsOpen, setShortcutsOpen] = useState(false);
 
   const openTrash = useCallback(() => setTrashOpen(true), []);
   const openHelp = useCallback(() => setShortcutsOpen(true), []);
 
-  useKeyboardShortcuts(roadmapId, roadmap?.root_node_id ?? null, openTrash, openHelp);
+  useKeyboardShortcuts(roadmapId, roadmap?.rootNodeId ?? null, openTrash, openHelp);
 
   useEffect(() => {
     if (authLoading) return;
@@ -48,15 +51,14 @@ export default function RoadmapEditorPage() {
 
     async function load() {
       try {
-        const roadmaps = await roadmapsApi.fetchRoadmaps();
+        const found = await roadmapsApi.fetchRoadmap(roadmapId);
         if (cancelled) return;
-        const found = roadmaps.find((r) => r.id === roadmapId);
         if (!found) {
           router.push("/dashboard");
           return;
         }
         setRoadmap(found);
-        await useRoadmapStore.getState().loadNodes(roadmapId);
+        await useRoadmapStore.getState().loadNodes(roadmapId, found.rootNodeId ?? undefined);
       } catch (error) {
         console.error("Failed to load roadmap:", error instanceof Error ? error.message : error);
         if (!cancelled) router.push("/dashboard");
@@ -104,7 +106,7 @@ export default function RoadmapEditorPage() {
           </Button>
           <Separator orientation="vertical" className="h-5 hidden sm:block" />
           <h1 className="text-sm font-medium truncate min-w-0">
-            {roadmap.title}
+            {(roadmap.rootNodeId && nodes.get(roadmap.rootNodeId)?.title) || roadmap.title}
           </h1>
         </div>
 
@@ -147,6 +149,28 @@ export default function RoadmapEditorPage() {
             variant="ghost"
             size="sm"
             className="h-8 w-8 p-0 sm:w-auto sm:px-3 text-xs"
+            onClick={() => setShareOpen(true)}
+          >
+            <svg
+              className="h-3.5 w-3.5 sm:mr-1"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2}
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M7.217 10.907a2.25 2.25 0 1 0 0 2.186m0-2.186c.18.324.283.696.283 1.093s-.103.77-.283 1.093m0-2.186 9.566-5.314m-9.566 7.5 9.566 5.314m0 0a2.25 2.25 0 1 0 3.935 2.186 2.25 2.25 0 0 0-3.935-2.186Zm0-12.814a2.25 2.25 0 1 0 3.933-2.185 2.25 2.25 0 0 0-3.933 2.185Z"
+              />
+            </svg>
+            <span className="hidden sm:inline">Share</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 w-8 p-0 sm:w-auto sm:px-3 text-xs"
             onClick={() => setTrashOpen(true)}
           >
             <svg
@@ -180,7 +204,7 @@ export default function RoadmapEditorPage() {
       </header>
 
       {/* Breadcrumbs (focus mode) */}
-      <Breadcrumbs rootNodeId={roadmap.root_node_id} />
+      <Breadcrumbs rootNodeId={roadmap.rootNodeId} />
 
       {/* Main content: view + detail panel */}
       <div className="flex flex-1 overflow-hidden relative">
@@ -192,12 +216,12 @@ export default function RoadmapEditorPage() {
           {viewMode === "list" ? (
             <TreeView
               roadmapId={roadmapId}
-              rootNodeId={roadmap.root_node_id}
+              rootNodeId={roadmap.rootNodeId}
             />
           ) : (
             <CardView
               roadmapId={roadmapId}
-              rootNodeId={roadmap.root_node_id}
+              rootNodeId={roadmap.rootNodeId}
             />
           )}
         </div>
@@ -207,7 +231,7 @@ export default function RoadmapEditorPage() {
           <div className="w-full sm:w-[340px] shrink-0 overflow-hidden">
             <NodeDetail
               roadmapId={roadmapId}
-              rootNodeId={roadmap.root_node_id}
+              rootNodeId={roadmap.rootNodeId}
             />
           </div>
         )}
@@ -218,6 +242,14 @@ export default function RoadmapEditorPage() {
         roadmapId={roadmapId}
         open={trashOpen}
         onOpenChange={setTrashOpen}
+      />
+
+      {/* Share dialog */}
+      <ShareDialog
+        roadmapId={roadmapId}
+        roadmapTitle={roadmap.title}
+        open={shareOpen}
+        onOpenChange={setShareOpen}
       />
 
       {/* Shortcuts help */}

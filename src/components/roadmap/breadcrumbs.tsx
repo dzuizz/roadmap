@@ -19,7 +19,7 @@ export function Breadcrumbs({ rootNodeId }: BreadcrumbsProps) {
     const node = nodes.get(currentId);
     if (!node) break;
     path.unshift({ id: node.id, title: node.title });
-    currentId = node.parent_id;
+    currentId = node.parentId;
   }
 
   return (

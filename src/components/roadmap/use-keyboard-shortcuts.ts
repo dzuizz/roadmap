@@ -27,7 +27,7 @@ export function useKeyboardShortcuts(roadmapId: string, rootNodeId: string | nul
           if (!node) return;
           const children = getChildren(selectedNodeId);
           if (children.length === 0) {
-            store.updateNode(selectedNodeId, { is_completed: !node.is_completed });
+            store.updateNode(selectedNodeId, { isCompleted: !node.isCompleted });
           }
           break;
         }
@@ -69,8 +69,8 @@ export function useKeyboardShortcuts(roadmapId: string, rootNodeId: string | nul
           } else {
             // Select parent
             const node = nodes.get(selectedNodeId);
-            if (node?.parent_id) {
-              store.selectNode(node.parent_id);
+            if (node?.parentId) {
+              store.selectNode(node.parentId);
             }
           }
           break;
@@ -140,7 +140,7 @@ function getVisibleNodes(store: ReturnType<typeof useRoadmapStore.getState>): st
   let rootId: string | null = focusedNodeId;
   if (!rootId) {
     for (const node of nodes.values()) {
-      if (!node.parent_id) {
+      if (!node.parentId) {
         rootId = node.id;
         break;
       }

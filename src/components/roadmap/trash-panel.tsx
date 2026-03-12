@@ -50,12 +50,13 @@ export function TrashPanel({ roadmapId, open, onOpenChange }: TrashPanelProps) {
           ) : (
             <div className="space-y-2">
               {trashEntries.map((entry) => {
-                const snapshot = entry.node_snapshot as NodeSnapshot;
+                const snapshot = entry.nodeSnapshot;
                 const nodeCount = countSnapshotNodes(snapshot);
+                const now = new Date();
                 const daysLeft = Math.max(
                   0,
                   Math.ceil(
-                    (new Date(entry.expires_at).getTime() - Date.now()) /
+                    (new Date(entry.expiresAt).getTime() - now.getTime()) /
                       (1000 * 60 * 60 * 24)
                   )
                 );

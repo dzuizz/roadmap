@@ -1,48 +1,60 @@
 export interface Roadmap {
   id: string;
-  user_id: string;
+  ownerId: string;
   title: string;
   description: string | null;
-  root_node_id: string | null;
-  created_at: string;
-  updated_at: string;
+  rootNodeId: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Node {
   id: string;
-  roadmap_id: string;
-  parent_id: string | null;
+  roadmapId: string;
+  parentId: string | null;
   path: string;
   position: number;
   title: string;
   description: string | null;
   link: string | null;
-  is_completed: boolean;
-  created_at: string;
-  updated_at: string;
-  deleted_at: string | null;
+  isCompleted: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type MemberRole = "owner" | "editor" | "viewer";
+
+export interface Member {
+  userId: string;
+  role: MemberRole;
+  addedAt: string;
+  email?: string;
+  displayName?: string;
 }
 
 export interface TrashEntry {
   id: string;
-  roadmap_id: string;
-  node_snapshot: NodeSnapshot;
-  parent_id: string | null;
-  original_node_id: string;
-  deleted_at: string;
-  expires_at: string;
+  roadmapId: string;
+  nodeSnapshot: NodeSnapshot;
+  parentId: string | null;
+  originalNodeId: string;
+  deletedAt: string;
+  expiresAt: string;
 }
 
 export interface NodeSnapshot {
-  node: Omit<Node, "deleted_at">;
+  node: Node;
   children: NodeSnapshot[];
 }
 
 export type RoadmapInsert = Pick<Roadmap, "title" | "description">;
-export type NodeInsert = Pick<
-  Node,
-  "roadmap_id" | "parent_id" | "title" | "description" | "link"
->;
 export type NodeUpdate = Partial<
-  Pick<Node, "title" | "description" | "link" | "is_completed" | "position" | "parent_id">
+  Pick<Node, "title" | "description" | "link" | "isCompleted" | "position" | "parentId">
 >;
+
+export interface UserRoadmapEntry {
+  roadmapId: string;
+  role: MemberRole;
+  title: string;
+  updatedAt: string;
+}
