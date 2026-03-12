@@ -169,13 +169,16 @@ export const useRoadmapStore = create<RoadmapEditorState>((set, get) => ({
         return { nodes: newNodes, saving: false };
       });
 
-      // Sync root node title → roadmap title
+      // Sync root node title/description → roadmap
       if (
-        updates.title &&
+        (updates.title || updates.description !== undefined) &&
         nodeId === currentRootNodeId &&
         currentRoadmapId
       ) {
-        roadmapsApi.updateRoadmap(currentRoadmapId, { title: updates.title });
+        const roadmapUpdates: Partial<Pick<import("@/types/database").Roadmap, "title" | "description">> = {};
+        if (updates.title) roadmapUpdates.title = updates.title;
+        if (updates.description !== undefined) roadmapUpdates.description = updates.description;
+        roadmapsApi.updateRoadmap(currentRoadmapId, roadmapUpdates);
       }
     } catch (error) {
       console.error("Failed to update node:", error);

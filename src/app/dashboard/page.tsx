@@ -107,7 +107,7 @@ export default function DashboardPage() {
       {/* Header */}
       <header className="border-b">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          <h1 className="text-lg font-semibold">Ada Roadmap</h1>
+          <h1 className="text-lg font-semibold">ADA Roadmap</h1>
           <div className="flex items-center gap-2 sm:gap-3">
             <span className="hidden sm:inline text-sm text-muted-foreground">
               {user?.email}

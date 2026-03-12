@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Ada Roadmap",
+  title: "ADA Roadmap",
   description: "Build, evolve, and track your learning roadmaps",
 };
 

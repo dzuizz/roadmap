@@ -6,7 +6,7 @@ export default function LandingPage() {
       {/* Nav */}
       <header className="border-b">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-          <span className="text-lg font-semibold">Ada Roadmap</span>
+          <span className="text-lg font-semibold">ADA Roadmap</span>
           <div className="flex items-center gap-3">
             <Link
               href="/login"
@@ -73,7 +73,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer className="border-t py-6">
         <div className="mx-auto max-w-5xl px-4 text-center text-xs text-muted-foreground">
-          Ada Roadmap
+          ADA Roadmap
         </div>
       </footer>
     </div>

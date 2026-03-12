@@ -100,7 +100,7 @@ export async function createRoadmap(
     path: `/${rootNodeId}`,
     position: 0,
     title,
-    description: null,
+    description: description || null,
     link: null,
     isCompleted: false,
     createdAt: now,
@@ -150,16 +150,19 @@ export async function updateRoadmap(
     updatedAt: serverTimestamp(),
   });
 
-  // Update denormalized title in userRoadmaps for all members
-  if (updates.title) {
+  // Update denormalized fields in userRoadmaps for all members
+  if (updates.title || updates.description !== undefined) {
     const membersSnap = await getDocs(
       collection(db, "roadmaps", id, "members")
     );
+    const denormalized: Record<string, unknown> = { updatedAt: serverTimestamp() };
+    if (updates.title) denormalized.title = updates.title;
+    if (updates.description !== undefined) denormalized.description = updates.description;
     const batch = writeBatch(db);
     for (const memberDoc of membersSnap.docs) {
       batch.update(
         doc(db, "userRoadmaps", memberDoc.id, "roadmaps", id),
-        { title: updates.title, updatedAt: serverTimestamp() }
+        denormalized
       );
     }
     await batch.commit();
@@ -181,8 +184,9 @@ export async function updateRoadmap(
 export async function deleteRoadmap(id: string): Promise<void> {
   const db = getFirestoreDb();
 
-  // Delete all subcollections (nodes, trash, members)
-  // Firestore batches have a 500-operation limit. Chunk if needed.
+  // Delete subcollections: nodes and trash first, members last.
+  // Members must be deleted last because security rules for nodes/trash
+  // check membership via the members subcollection.
   const subcollections = ["nodes", "trash", "members"];
   for (const sub of subcollections) {
     const snap = await getDocs(collection(db, "roadmaps", id, sub));
