@@ -44,13 +44,8 @@ async function verifyToken(req: NextRequest): Promise<string> {
     throw new Error("Missing auth token");
   }
   const token = authHeader.slice(7);
-  const { initializeApp, getApps, cert } = await import("firebase-admin/app");
-  if (getApps().length === 0) {
-    const serviceAccount = JSON.parse(
-      Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT!, "base64").toString()
-    );
-    initializeApp({ credential: cert(serviceAccount) });
-  }
+  // Ensure Admin SDK is initialized via the singleton
+  getAdminFirestore();
   const decoded = await getAuth().verifyIdToken(token);
   return decoded.uid;
 }
