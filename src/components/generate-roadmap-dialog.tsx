@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { getFirebaseAuth } from "@/lib/firebase/client";
-import { getOpenAIApiKey } from "@/lib/api/settings";
+import { getAISettings, type AIProvider } from "@/lib/api/settings";
 import * as roadmapsApi from "@/lib/api/roadmaps";
 import * as nodesApi from "@/lib/api/nodes";
 import { Button } from "@/components/ui/button";
@@ -36,7 +36,6 @@ async function createNodesRecursive(
   for (let i = 0; i < children.length; i++) {
     const child = children[i];
     const node = await nodesApi.createNode(roadmapId, parentId, parentPath, i);
-    // Update title and description
     if (child.title !== "Untitled" || child.description) {
       await nodesApi.updateNode(
         node.id,
@@ -47,7 +46,6 @@ async function createNodesRecursive(
         roadmapId
       );
     }
-    // Recurse for children
     if (child.children.length > 0) {
       await createNodesRecursive(
         roadmapId,
@@ -67,17 +65,29 @@ export function GenerateRoadmapDialog({
   const [prompt, setPrompt] = useState("");
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [hasApiKey, setHasApiKey] = useState<boolean | null>(null);
+  const [provider, setProvider] = useState<AIProvider>("gemini");
+  const [hasOpenAIKey, setHasOpenAIKey] = useState(false);
+  const [hasGeminiKey, setHasGeminiKey] = useState(false);
 
   useEffect(() => {
     if (open) {
       setError(null);
       setPrompt("");
-      getOpenAIApiKey()
-        .then((key) => setHasApiKey(!!key))
-        .catch(() => setHasApiKey(null));
+      getAISettings()
+        .then((settings) => {
+          setHasOpenAIKey(!!settings.openaiApiKey);
+          setHasGeminiKey(!!settings.geminiApiKey);
+          setProvider(settings.preferredProvider);
+        })
+        .catch(() => {
+          setHasOpenAIKey(false);
+          setHasGeminiKey(false);
+        });
     }
   }, [open]);
+
+  const hasKeyForProvider = provider === "openai" ? hasOpenAIKey : hasGeminiKey;
+  const hasAnyKey = hasOpenAIKey || hasGeminiKey;
 
   const handleGenerate = async () => {
     if (!prompt.trim()) return;
@@ -95,7 +105,7 @@ export function GenerateRoadmapDialog({
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ prompt: prompt.trim() }),
+        body: JSON.stringify({ prompt: prompt.trim(), provider }),
       });
 
       const data = await res.json();
@@ -107,13 +117,11 @@ export function GenerateRoadmapDialog({
 
       const tree = data.tree as GeneratedNode;
 
-      // Create roadmap
       const roadmap = await roadmapsApi.createRoadmap(
         tree.title,
         tree.description || undefined
       );
 
-      // Create child nodes recursively
       if (tree.children.length > 0 && roadmap.rootNodeId) {
         await createNodesRecursive(
           roadmap.id,
@@ -139,12 +147,41 @@ export function GenerateRoadmapDialog({
           <DialogTitle>Generate Roadmap with AI</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 pt-2">
-          {hasApiKey === false && (
+          {!hasAnyKey && (
             <div className="rounded-md border border-yellow-200 bg-yellow-50 p-3 text-sm text-yellow-800 dark:border-yellow-900 dark:bg-yellow-950 dark:text-yellow-200">
-              No OpenAI API key configured. Add one in Settings (gear icon) to
-              use this feature.
+              No API key configured. Add one in Settings (gear icon) to use
+              this feature.
             </div>
           )}
+          <div className="space-y-2">
+            <Label>AI Provider</Label>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant={provider === "gemini" ? "default" : "outline"}
+                onClick={() => setProvider("gemini")}
+                disabled={generating}
+              >
+                Gemini
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant={provider === "openai" ? "default" : "outline"}
+                onClick={() => setProvider("openai")}
+                disabled={generating}
+              >
+                OpenAI
+              </Button>
+            </div>
+            {!hasKeyForProvider && hasAnyKey && (
+              <p className="text-xs text-yellow-600 dark:text-yellow-400">
+                No {provider === "openai" ? "OpenAI" : "Gemini"} API key set.
+                Add one in Settings or switch provider.
+              </p>
+            )}
+          </div>
           <div className="space-y-2">
             <Label htmlFor="prompt">What do you want to learn?</Label>
             <Textarea
@@ -169,7 +206,7 @@ export function GenerateRoadmapDialog({
             </Button>
             <Button
               onClick={handleGenerate}
-              disabled={generating || !prompt.trim() || hasApiKey === false}
+              disabled={generating || !prompt.trim() || !hasKeyForProvider}
             >
               {generating ? "Generating..." : "Generate"}
             </Button>
