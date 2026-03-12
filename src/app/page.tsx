@@ -2,9 +2,9 @@ import Link from "next/link";
 
 export default function LandingPage() {
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col gradient-page">
       {/* Nav */}
-      <header className="border-b">
+      <header className="border-b gradient-header">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <span className="text-lg font-semibold">ADA Roadmap</span>
           <div className="flex items-center gap-3">

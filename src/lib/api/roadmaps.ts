@@ -145,10 +145,14 @@ export async function updateRoadmap(
   const db = getFirestoreDb();
   const roadmapRef = doc(db, "roadmaps", id);
 
-  await updateDoc(roadmapRef, {
-    ...updates,
-    updatedAt: serverTimestamp(),
-  });
+  // Read current state and update in parallel
+  const [snap] = await Promise.all([
+    getDoc(roadmapRef),
+    updateDoc(roadmapRef, {
+      ...updates,
+      updatedAt: serverTimestamp(),
+    }),
+  ]);
 
   // Update denormalized fields in userRoadmaps for all members
   if (updates.title || updates.description !== undefined) {
@@ -168,16 +172,17 @@ export async function updateRoadmap(
     await batch.commit();
   }
 
-  const snap = await getDoc(roadmapRef);
+  // Merge updates into the read snapshot (avoids second read)
   const data = snap.data()!;
+  const nowISO = new Date().toISOString();
   return {
     id,
     ownerId: data.ownerId,
-    title: data.title,
-    description: data.description ?? null,
+    title: updates.title ?? data.title,
+    description: updates.description !== undefined ? (updates.description ?? null) : (data.description ?? null),
     rootNodeId: data.rootNodeId ?? null,
     createdAt: toISOString(data.createdAt),
-    updatedAt: toISOString(data.updatedAt),
+    updatedAt: nowISO,
   };
 }
 

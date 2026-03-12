@@ -24,6 +24,9 @@ const providers = {
   github: () => new GithubAuthProvider(),
 };
 
+// Track if user doc has been upserted this session to avoid redundant writes
+let userDocSynced = false;
+
 export const useAuthStore = create<AuthState>((set) => ({
   user: null,
   loading: true,
@@ -32,7 +35,8 @@ export const useAuthStore = create<AuthState>((set) => ({
     const auth = getFirebaseAuth();
     onAuthStateChanged(auth, (user) => {
       set({ user, loading: false });
-      if (user) {
+      if (user && !userDocSynced) {
+        userDocSynced = true;
         const db = getFirestoreDb();
         setDoc(
           doc(db, "users", user.uid),
@@ -40,6 +44,7 @@ export const useAuthStore = create<AuthState>((set) => ({
           { merge: true }
         );
       }
+      if (!user) userDocSynced = false;
     });
   },
 

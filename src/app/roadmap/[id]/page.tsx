@@ -82,7 +82,7 @@ export default function RoadmapEditorPage() {
   return (
     <div className="flex h-[100dvh] flex-col">
       {/* Header */}
-      <header className="flex h-12 shrink-0 items-center justify-between border-b px-2 sm:px-4">
+      <header className="flex h-12 shrink-0 items-center justify-between border-b px-2 sm:px-4 gradient-header">
         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
           <Button
             variant="ghost"

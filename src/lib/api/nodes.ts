@@ -101,13 +101,19 @@ export async function updateNode(
   }
 
   const nodeRef = doc(db, "roadmaps", roadmapId, "nodes", nodeId);
-  await updateDoc(nodeRef, {
-    ...updates,
-    updatedAt: serverTimestamp(),
-  });
 
-  const snap = await getDoc(nodeRef);
-  return docToNode(snap.id, snap.data()!, roadmapId);
+  // Read current state and write in parallel for efficiency
+  const [snap] = await Promise.all([
+    getDoc(nodeRef),
+    updateDoc(nodeRef, {
+      ...updates,
+      updatedAt: serverTimestamp(),
+    }),
+  ]);
+
+  // Merge updates into the read snapshot (avoids a second read)
+  const data = snap.data()!;
+  return docToNode(snap.id, { ...data, ...updates, updatedAt: new Date().toISOString() }, roadmapId);
 }
 
 function buildSnapshot(node: Node, allNodes: Node[]): NodeSnapshot {
@@ -242,6 +248,78 @@ export async function restoreFromTrash(
   await restoreSnapshotRecursive(snapshot, roadmapId, batch);
   batch.delete(trashRef);
   await batch.commit();
+}
+
+export interface GeneratedTreeNode {
+  title: string;
+  description: string | null;
+  children: GeneratedTreeNode[];
+}
+
+export async function createNodesFromTree(
+  roadmapId: string,
+  rootNodeId: string,
+  children: GeneratedTreeNode[]
+): Promise<void> {
+  const db = getFirestoreDb();
+  const now = serverTimestamp();
+
+  // Collect all nodes to create in a flat list
+  interface PendingNode {
+    id: string;
+    parentId: string;
+    path: string;
+    position: number;
+    title: string;
+    description: string | null;
+  }
+
+  const pending: PendingNode[] = [];
+
+  function collectNodes(
+    parentId: string,
+    parentPath: string,
+    nodes: GeneratedTreeNode[]
+  ) {
+    for (let i = 0; i < nodes.length; i++) {
+      const node = nodes[i];
+      const id = uuidv4();
+      const path = `${parentPath}/${id}`;
+      pending.push({
+        id,
+        parentId,
+        path,
+        position: i,
+        title: node.title,
+        description: node.description,
+      });
+      if (node.children.length > 0) {
+        collectNodes(id, path, node.children);
+      }
+    }
+  }
+
+  collectNodes(rootNodeId, `/${rootNodeId}`, children);
+
+  // Write in batches of 400 (Firestore limit is 500)
+  for (let i = 0; i < pending.length; i += 400) {
+    const chunk = pending.slice(i, i + 400);
+    const batch = writeBatch(db);
+    for (const node of chunk) {
+      batch.set(doc(db, "roadmaps", roadmapId, "nodes", node.id), {
+        parentId: node.parentId,
+        path: node.path,
+        position: node.position,
+        title: node.title,
+        description: node.description,
+        link: null,
+        isCompleted: false,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+    await batch.commit();
+  }
 }
 
 export async function permanentlyDeleteTrashEntry(

@@ -124,3 +124,36 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Subtle radial gradient backgrounds */
+.gradient-page {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, oklch(0.92 0.02 260 / 15%), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 100%, oklch(0.92 0.02 300 / 10%), transparent);
+}
+
+.dark .gradient-page {
+  background:
+    radial-gradient(ellipse 80% 50% at 50% -20%, oklch(0.3 0.03 260 / 20%), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 100%, oklch(0.25 0.02 300 / 15%), transparent);
+}
+
+.gradient-card {
+  background:
+    radial-gradient(ellipse at top left, oklch(0.96 0.01 260 / 30%), transparent 70%);
+}
+
+.dark .gradient-card {
+  background:
+    radial-gradient(ellipse at top left, oklch(0.25 0.015 260 / 30%), transparent 70%);
+}
+
+.gradient-header {
+  background:
+    radial-gradient(ellipse 120% 100% at 50% 100%, oklch(0.95 0.008 260 / 20%), transparent);
+}
+
+.dark .gradient-header {
+  background:
+    radial-gradient(ellipse 120% 100% at 50% 100%, oklch(0.2 0.01 260 / 25%), transparent);
+}

@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { getFirebaseAuth } from "@/lib/firebase/client";
 import { getAISettings, type AIProvider } from "@/lib/api/settings";
 import * as roadmapsApi from "@/lib/api/roadmaps";
-import * as nodesApi from "@/lib/api/nodes";
+import { createNodesFromTree } from "@/lib/api/nodes";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
@@ -25,36 +25,6 @@ interface GenerateRoadmapDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onGenerated: (roadmapId: string) => void;
-}
-
-async function createNodesRecursive(
-  roadmapId: string,
-  parentId: string,
-  parentPath: string,
-  children: GeneratedNode[]
-): Promise<void> {
-  for (let i = 0; i < children.length; i++) {
-    const child = children[i];
-    const node = await nodesApi.createNode(roadmapId, parentId, parentPath, i);
-    if (child.title !== "Untitled" || child.description) {
-      await nodesApi.updateNode(
-        node.id,
-        {
-          title: child.title,
-          ...(child.description && { description: child.description }),
-        },
-        roadmapId
-      );
-    }
-    if (child.children.length > 0) {
-      await createNodesRecursive(
-        roadmapId,
-        node.id,
-        node.path,
-        child.children
-      );
-    }
-  }
 }
 
 export function GenerateRoadmapDialog({
@@ -123,10 +93,9 @@ export function GenerateRoadmapDialog({
       );
 
       if (tree.children.length > 0 && roadmap.rootNodeId) {
-        await createNodesRecursive(
+        await createNodesFromTree(
           roadmap.id,
           roadmap.rootNodeId,
-          `/${roadmap.rootNodeId}`,
           tree.children
         );
       }

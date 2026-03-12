@@ -107,9 +107,9 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen gradient-page">
       {/* Header */}
-      <header className="border-b">
+      <header className="border-b gradient-header">
         <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
           <h1 className="text-lg font-semibold">ADA Roadmap</h1>
           <div className="flex items-center gap-2 sm:gap-3">
@@ -212,7 +212,7 @@ export default function DashboardPage() {
             {roadmaps.map((roadmap) => (
               <div
                 key={roadmap.id}
-                className="group flex cursor-pointer items-center justify-between rounded-lg border px-4 py-3 transition-colors hover:bg-accent"
+                className="group flex cursor-pointer items-center justify-between rounded-lg border px-4 py-3 transition-all hover:bg-accent hover:shadow-sm gradient-card"
                 onClick={() => router.push(`/roadmap/${roadmap.id}`)}
               >
                 <div className="min-w-0 flex-1">
